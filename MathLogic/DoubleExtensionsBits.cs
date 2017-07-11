@@ -22,7 +22,6 @@ namespace MathLogic
                 d = dv;
             }
         }
-        // works only for positive doubles
         public static string DoubleToBits(double d)
         {
             const int doublesize = 64;
