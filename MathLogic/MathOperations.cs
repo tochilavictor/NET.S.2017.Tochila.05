@@ -9,6 +9,10 @@ namespace MathLogic
 {
     public static class MathOperations
     {
+        public delegate int Algorythm(int lhs, int rhs);
+
+        private static readonly Algorythm Euclid = GcdEuclidLogic;
+        private static readonly Algorythm Stein = GcdBinaryLogic;
         #region GCDEuclidPublic
         /// <summary>
         /// implements Euclid GCD algorythm for 2 integers
@@ -19,18 +23,11 @@ namespace MathLogic
         /// <returns>GCD</returns>
         public static int Gcd(int a, int b, out double time)
         {
-            if (a == 0 && b == 0)
-                throw new ArgumentOutOfRangeException("At least 1 number must bo not 0");
-
-            var sw = new Stopwatch();
-            sw.Start();
-
-            int k = GcdEuclidLogic(a, b);
-
-            sw.Stop();
-            time = sw.Elapsed.TotalMilliseconds;
-
-            return k;
+            return Gcdfor2intsPlusTime(a,b, Euclid,true,out time);
+        }
+        public static int Gcd(int a, int b)
+        {
+            return Gcdfor2ints(a, b, Euclid, true);
         }
         /// <summary>
         /// implements Euclid GCD algorythm for 3 integers
@@ -42,18 +39,11 @@ namespace MathLogic
         /// <returns>GCD</returns>
         public static int Gcd(int a, int b, int c, out double time)
         {
-            if (a == 0 && b == 0 && c == 0)
-                throw new ArgumentOutOfRangeException("At least 1 number must bo not 0");
-
-            var sw = new Stopwatch();
-            sw.Start();
-
-            int k = GcdEuclidLogic(a, GcdEuclidLogic(b, c));
-
-            sw.Stop();
-            time = sw.Elapsed.TotalMilliseconds;
-
-            return k;
+            return Gcdfor3intsPlusTime(a,b,c,Euclid,true,out time);
+        }
+        public static int Gcd(int a, int b, int c)
+        {
+            return Gcdfor3ints(a, b, c, Euclid, true);
         }
         /// <summary>
         /// implements Euclid GCD algorythm for integers array of any lenght
@@ -63,25 +53,11 @@ namespace MathLogic
         /// <returns></returns>
         public static int Gcd(out double time, params int[] a)
         {
-            ValidateArray(a);
-            if (Contains0Only(a))
-                throw new ArgumentOutOfRangeException("At least 1 number must bo not 0");
-
-            var sw = new Stopwatch();
-            sw.Start();
-
-            int[] b = new int[a.Length];
-            Array.Copy(a, b, a.Length);
-
-            for (int i = b.Length - 2; i != -1; i--)
-            {
-                b[i] = GcdEuclidLogic(b[i], b[i + 1]);
-            }
-
-            sw.Stop();
-            time = sw.Elapsed.TotalMilliseconds;
-
-            return b[0];
+            return GcdforparamsPlusTime(out time,Euclid,true,a);
+        }
+        public static int Gcd(params int[] a)
+        {
+            return Gcdforparams(Euclid, true, a);
         }
         #endregion
 
@@ -95,21 +71,11 @@ namespace MathLogic
         /// <returns>GCD</returns>
         public static int GcdBinary(int a, int b, out double time)
         {
-            if (a == 0 && b == 0)
-                throw new ArgumentOutOfRangeException("At least 1 number must be not 0");
-      
-            if (a < 0 || b < 0)
-                throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
-
-            var sw = new Stopwatch();
-            sw.Start();
-
-            int k = GcdBinaryLogic(a, b);
-
-            sw.Stop();
-            time = sw.Elapsed.TotalMilliseconds;
-
-            return k;
+            return Gcdfor2intsPlusTime(a, b, Stein, false, out time);
+        }
+        public static int GcdBinary(int a, int b)
+        {
+            return Gcdfor2ints(a, b, Stein, false);
         }
         /// <summary>
         /// implements Steins binary GCD algorythm for 3 integers
@@ -121,21 +87,11 @@ namespace MathLogic
         /// <returns>GCD</returns>
         public static int GcdBinary(int a, int b, int c, out double time)
         {
-            if (a == 0 && b == 0 && c == 0)
-                throw new ArgumentOutOfRangeException("At least 1 number must be not 0");
-
-            if (a < 0 || b < 0 || c < 0)
-                throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
-
-            var sw = new Stopwatch();
-            sw.Start();
-
-            int k = GcdBinaryLogic(a, GcdEuclidLogic(b, c));
-
-            sw.Stop();
-            time = sw.Elapsed.TotalMilliseconds;
-
-            return k;
+            return Gcdfor3intsPlusTime(a,b,c,Stein,false,out time);
+        }
+        public static int GcdBinary(int a, int b, int c)
+        {
+            return Gcdfor3ints(a, b, c, Stein, false);
         }
         /// <summary>
         /// implements Steins binary GCD algorythm for integers array of any lenght
@@ -145,22 +101,129 @@ namespace MathLogic
         /// <returns></returns>
         public static int GcdBinary(out double time, params int[] a)
         {
+            return GcdforparamsPlusTime(out time, Stein, false, a);
+        }
+        public static int GcdBinary(params int[] a)
+        {
+            return Gcdforparams(Stein, false, a);
+        }
+
+
+        #endregion
+
+        #region private_methods
+        private static int Gcdfor2ints(int a, int b, Algorythm algorythm, bool allowNegative)
+        {
+            if (a == 0 && b == 0)
+                throw new ArgumentOutOfRangeException("At least 1 number must be not 0");
+
+            if (!allowNegative)
+            {
+                if (a < 0 || b < 0)
+                    throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
+            }
+
+            int k = algorythm(a, b);
+
+            return k;
+        }
+        private static int Gcdfor2intsPlusTime(int a, int b, Algorythm algorythm, bool allowNegative, out double time)
+        {
+            if (a == 0 && b == 0)
+                throw new ArgumentOutOfRangeException("At least 1 number must be not 0");
+
+            var sw = new Stopwatch();
+            sw.Start();
+
+            if (!allowNegative)
+            {
+                if (a < 0 || b < 0)
+                    throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
+            }
+
+            int k = algorythm(a, b);
+
+            sw.Stop();
+            time = sw.Elapsed.TotalMilliseconds;
+
+            return k;
+        }
+        private static int Gcdfor3ints(int a, int b, int c, Algorythm algorythm, bool allowNegative)
+        {
+            if (a == 0 && b == 0 && c == 0)
+                throw new ArgumentOutOfRangeException("At least 1 number must be not 0");
+            if (!allowNegative)
+            {
+                if (a < 0 || b < 0 || c < 0)
+                    throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
+            }
+            int k = algorythm(a, algorythm(b, c));
+
+            return k;
+        }
+        private static int Gcdfor3intsPlusTime(int a, int b, int c, Algorythm algorythm, bool allowNegative, out double time)
+        {
+            if (a == 0 && b == 0 && c == 0)
+                throw new ArgumentOutOfRangeException("At least 1 number must be not 0");
+
+            var sw = new Stopwatch();
+            sw.Start();
+
+            if (!allowNegative)
+            {
+                if (a < 0 || b < 0 || c < 0)
+                    throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
+            }
+            int k = algorythm(a, algorythm(b, c));
+
+            sw.Stop();
+            time = sw.Elapsed.TotalMilliseconds;
+
+            return k;
+        }
+        private static int Gcdforparams(Algorythm algorythm, bool allowNegative, params int[] a)
+        {
             ValidateArray(a);
 
             if (Contains0Only(a))
                 throw new ArgumentOutOfRangeException("At least 1 number must be not 0");
 
-            if(!ContainsOnlyNonNegative(a)) throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
-
-            var sw = new Stopwatch();
-            sw.Start();
+            if (!allowNegative)
+            {
+                if (!ContainsOnlyNonNegative(a)) throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
+            }
 
             int[] b = new int[a.Length];
             Array.Copy(a, b, a.Length);
 
             for (int i = b.Length - 2; i != -1; i--)
             {
-                b[i] = GcdBinaryLogic(b[i], b[i + 1]);
+                b[i] = algorythm(b[i], b[i + 1]);
+            }
+
+            return b[0];
+        }
+        private static int GcdforparamsPlusTime(out double time, Algorythm algorythm, bool allowNegative, params int[] a)
+        {
+            ValidateArray(a);
+
+            if (Contains0Only(a))
+                throw new ArgumentOutOfRangeException("At least 1 number must be not 0");
+
+            var sw = new Stopwatch();
+            sw.Start();
+
+            if (!allowNegative)
+            {
+                if (!ContainsOnlyNonNegative(a)) throw new ArgumentOutOfRangeException("Numbers must be nonnegative");
+            }
+
+            int[] b = new int[a.Length];
+            Array.Copy(a, b, a.Length);
+
+            for (int i = b.Length - 2; i != -1; i--)
+            {
+                b[i] = algorythm(b[i], b[i + 1]);
             }
 
             sw.Stop();
@@ -168,11 +231,6 @@ namespace MathLogic
 
             return b[0];
         }
-
-        #endregion
-
-        #region private_methods
-
         private static int GcdEuclidLogic(int a, int b)
         {
             if (a == 0 || b == 0)
